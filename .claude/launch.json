@@ -14,7 +14,7 @@
       "runtimeExecutable": "node",
       "runtimeArgs": [
         "-e",
-        "process.env.PORT='3077';process.env.DATA_DIR='data-test';require('./server.js')"
+        "process.env.DATA_DIR='data-test';require('./server.js').listen(3077,()=>console.log('Prova su http://localhost:3077'))"
       ],
       "port": 3077
     }

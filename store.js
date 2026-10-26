@@ -2,8 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { todayKey } = require("./public/js/utils.js");
 
-// DATA_DIR permette di provare il gioco con dati separati (vedi CLAUDE.md).
-const DATA_DIR = path.resolve(__dirname, process.env.DATA_DIR || "data");
+const DATA_DIR = require("./data-dir.js");
 const DATA_FILE = path.join(DATA_DIR, "scores.json");
 
 let scores = [];

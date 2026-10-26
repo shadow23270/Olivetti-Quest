@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const SETTINGS_FILE = path.join(path.resolve(__dirname, process.env.DATA_DIR || "data"), "settings.json");
+const SETTINGS_FILE = path.join(require("./data-dir.js"), "settings.json");
 
 const MIN_QUESTION_TIME_SEC = 5;
 const MAX_QUESTION_TIME_SEC = 120;

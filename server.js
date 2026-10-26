@@ -64,7 +64,7 @@ function requireAdmin(req, res, next) {
 // Su Render/Railway l'IP reale arriva dal proxy. In locale invece l'intestazione
 // X-Forwarded-For la può scrivere chiunque: fidarsene permetterebbe di cambiare
 // IP a ogni tentativo e aggirare il blocco della parola segreta.
-if (process.env.TRUST_PROXY || process.env.RENDER || process.env.RAILWAY_ENVIRONMENT) {
+if (process.env.TRUST_PROXY || process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
   app.set("trust proxy", 1);
 }
 app.use(express.json());
@@ -199,15 +199,20 @@ app.get("/api/leaderboard", (req, res) => {
   res.json({ ok: true, entries: store.getTodayLeaderboard(limit) });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`ITS Olivetti Quest in ascolto su http://localhost:${PORT}`);
-});
+// Su Vercel l'app viene importata ed eseguita come funzione: niente listen.
+module.exports = app;
 
-server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(`\nLa porta ${PORT} è già occupata: probabilmente il gioco è già acceso.`);
-    console.error(`Aprite http://localhost:${PORT} nel browser, oppure chiudete l'altra finestra del gioco e riprovate.\n`);
-    process.exit(1);
-  }
-  throw err;
-});
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`ITS Olivetti Quest in ascolto su http://localhost:${PORT}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`\nLa porta ${PORT} è già occupata: probabilmente il gioco è già acceso.`);
+      console.error(`Aprite http://localhost:${PORT} nel browser, oppure chiudete l'altra finestra del gioco e riprovate.\n`);
+      process.exit(1);
+    }
+    throw err;
+  });
+}

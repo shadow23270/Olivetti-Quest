@@ -12,6 +12,16 @@ Tutti i testi del gioco sono in italiano.
   sovrascrivibile con la variabile d'ambiente `ADMIN_PASSWORD`). Resta solo sul server:
   non metterla nel codice di `public/`.
 
+## Online (Vercel)
+- Pubblicato su https://olivetti-quest.vercel.app (progetto Vercel `olivetti-quest`,
+  collegato al repository GitHub `shadow23270/Olivetti-Quest`: ogni push su `master`
+  ripubblica il sito).
+- Su Vercel `server.js` viene importato come funzione (esporta `app`; `listen` solo se
+  avviato con `node server.js`) e i dati vanno in `/tmp` (`data-dir.js`): classifica e
+  tempo base sono **temporanei** e possono azzerarsi o differire tra un dispositivo e
+  l'altro. Per l'open day con classifica affidabile usare il PC (`AVVIA-GIOCO.bat`) o
+  aggiungere un database (es. Upstash Redis).
+
 ## Struttura
 - `server.js` – Express: file statici + API (`/api/check-name`, `/api/score`,
   `/api/leaderboard`, `/api/settings`, `/api/admin/login`, `/api/admin/settings`,
