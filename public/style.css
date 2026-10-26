@@ -485,11 +485,12 @@ input[type="password"]:focus {
 /* ---------- Barra punteggio (dentro la fascia colorata) ---------- */
 
 .hud {
-  display: flex;
-  justify-content: space-between;
+  /* Tre colonne uguali ai lati: i cuori restano al centro esatto della barra,
+   * qualunque sia la lunghezza del nome o del punteggio. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
-  flex-wrap: wrap;
   background: oklch(0% 0 0 / 0.2);
   border: 1px solid oklch(100% 0 0 / 0.12);
   border-radius: var(--radius-md);
@@ -501,13 +502,17 @@ input[type="password"]:focus {
 }
 
 .hud-team {
+  justify-self: start;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .hud-score {
+  justify-self: end;
+  white-space: nowrap;
   background: var(--color-on-primary);
   color: oklch(35% 0.16 275);
   border-radius: var(--radius-pill);
@@ -517,7 +522,9 @@ input[type="password"]:focus {
 
 /* Vite: cuori tra il nome della squadra e i punti */
 .lives {
+  justify-self: center;
   display: inline-flex;
+  align-items: center;
   gap: 3px;
   font-size: var(--text-lg);
   line-height: 1;
