@@ -5,3 +5,8 @@ data/settings.json
 *.log
 .DS_Store
 data-test/
+data/scores.backup-*.json
+data/*.tmp
+data/*.rovinato-*.json
+.claude/settings.local.json
+*.zip
