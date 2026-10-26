@@ -17,10 +17,15 @@ Tutti i testi del gioco sono in italiano.
   collegato al repository GitHub `shadow23270/Olivetti-Quest`: ogni push su `master`
   ripubblica il sito).
 - Su Vercel `server.js` viene importato come funzione (esporta `app`; `listen` solo se
-  avviato con `node server.js`) e i dati vanno in `/tmp` (`data-dir.js`): classifica e
-  tempo base sono **temporanei** e possono azzerarsi o differire tra un dispositivo e
-  l'altro. Per l'open day con classifica affidabile usare il PC (`AVVIA-GIOCO.bat`) o
-  aggiungere un database (es. Upstash Redis).
+  avviato con `node server.js`).
+- Salvataggio (`store.js`, `settings.js`): se ci sono le variabili di Upstash Redis
+  (`KV_REST_API_URL`/`KV_REST_API_TOKEN` o `UPSTASH_REDIS_REST_URL`/`_TOKEN`, aggiunte da
+  Vercel collegando il database) usa Redis tramite `redis.js` (API REST, nessuna
+  dipendenza; un hash per giorno, una voce per partita; `REDIS_PREFIX` per prove).
+  Altrimenti usa i file in `data/` (su Vercel `/tmp`, temporaneo e non condiviso tra le
+  copie del server: classifica non affidabile finché Redis non è collegato).
+- Sul PC (`AVVIA-GIOCO.bat`) la classifica è sempre condivisa: un solo server, un file.
+- La pagina classifica si aggiorna da sola ogni 5 secondi (`leaderboard.js`).
 
 ## Struttura
 - `server.js` – Express: file statici + API (`/api/check-name`, `/api/score`,

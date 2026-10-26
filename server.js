@@ -107,19 +107,27 @@ app.post("/api/check-name", (req, res) => {
   res.json(result);
 });
 
-app.get("/api/settings", (req, res) => {
-  res.json({ ok: true, questionTimeSec: settings.get().questionTimeSec });
-});
+// Gli errori di salvataggio (es. Redis non raggiungibile) diventano un messaggio
+// chiaro invece di bloccare la richiesta.
+const handle = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch((err) => {
+    console.error(err);
+    res.status(500).json({ ok: false, reason: "Errore del server, riprova tra poco." });
+  });
 
-app.post("/api/admin/login", requireAdmin, (req, res) => {
+app.get("/api/settings", handle(async (req, res) => {
+  res.json({ ok: true, questionTimeSec: (await settings.get()).questionTimeSec });
+}));
+
+app.post("/api/admin/login", requireAdmin, handle(async (req, res) => {
   res.json({
     ok: true,
-    settings: settings.get(),
+    settings: await settings.get(),
     limits: { min: settings.MIN_QUESTION_TIME_SEC, max: settings.MAX_QUESTION_TIME_SEC },
   });
-});
+}));
 
-app.post("/api/admin/settings", requireAdmin, (req, res) => {
+app.post("/api/admin/settings", requireAdmin, handle(async (req, res) => {
   const { questionTimeSec } = req.body || {};
   if (
     !Number.isInteger(questionTimeSec) ||
@@ -131,27 +139,27 @@ app.post("/api/admin/settings", requireAdmin, (req, res) => {
       reason: `Il tempo deve essere un numero intero tra ${settings.MIN_QUESTION_TIME_SEC} e ${settings.MAX_QUESTION_TIME_SEC} secondi.`,
     });
   }
-  res.json({ ok: true, settings: settings.setQuestionTimeSec(questionTimeSec) });
-});
+  res.json({ ok: true, settings: await settings.setQuestionTimeSec(questionTimeSec) });
+}));
 
 // Classifica di oggi con gli id, per eliminare le singole partite.
-app.post("/api/admin/scores", requireAdmin, (req, res) => {
-  res.json({ ok: true, entries: store.getTodayLeaderboard(1000) });
-});
+app.post("/api/admin/scores", requireAdmin, handle(async (req, res) => {
+  res.json({ ok: true, entries: await store.getTodayLeaderboard(1000) });
+}));
 
-app.post("/api/admin/scores/delete", requireAdmin, (req, res) => {
+app.post("/api/admin/scores/delete", requireAdmin, handle(async (req, res) => {
   const { id } = req.body || {};
-  if (typeof id !== "string" || !store.deleteScore(id)) {
+  if (typeof id !== "string" || !(await store.deleteScore(id))) {
     return res.status(404).json({ ok: false, reason: "Partita non trovata (forse già eliminata)." });
   }
   res.json({ ok: true });
-});
+}));
 
-app.post("/api/admin/reset", requireAdmin, (req, res) => {
-  res.json({ ok: true, removed: store.resetToday() });
-});
+app.post("/api/admin/reset", requireAdmin, handle(async (req, res) => {
+  res.json({ ok: true, removed: await store.resetToday() });
+}));
 
-app.post("/api/score", (req, res) => {
+app.post("/api/score", handle(async (req, res) => {
   const { name, score, levelsCompleted, durationMs } = req.body || {};
 
   const nameCheck = ProfanityFilter.isClean(name);
@@ -184,7 +192,7 @@ app.post("/api/score", (req, res) => {
     return res.status(400).json({ ok: false, reason: "Durata partita non valida." });
   }
 
-  const entry = store.addScore({
+  const entry = await store.addScore({
     name: String(name).trim(),
     score,
     levelsCompleted,
@@ -192,12 +200,14 @@ app.post("/api/score", (req, res) => {
   });
 
   res.json({ ok: true, entry });
-});
+}));
 
-app.get("/api/leaderboard", (req, res) => {
+app.get("/api/leaderboard", handle(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit, 10) || 100, 200);
-  res.json({ ok: true, entries: store.getTodayLeaderboard(limit) });
-});
+  // La classifica viene riletta spesso (si aggiorna da sola): mai dalla cache.
+  res.set("Cache-Control", "no-store");
+  res.json({ ok: true, entries: await store.getTodayLeaderboard(limit) });
+}));
 
 // Su Vercel l'app viene importata ed eseguita come funzione: niente listen.
 module.exports = app;
@@ -205,6 +215,7 @@ module.exports = app;
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`ITS Olivetti Quest in ascolto su http://localhost:${PORT}`);
+    console.log(`Classifica salvata su: ${store.kind}`);
   });
 
   server.on("error", (err) => {

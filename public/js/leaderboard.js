@@ -1,14 +1,23 @@
-/* Carica e mostra la classifica dei punteggi registrati oggi.
+/* Carica e mostra la classifica dei punteggi registrati oggi, e la ricarica da
+ * sola ogni pochi secondi (utile sul proiettore durante l'open day).
  * Se il server non risponde, mostra la classifica salvata su questo dispositivo. */
 
 (function () {
+  const REFRESH_MS = 5000;
+
   const container = document.getElementById("leaderboard-content");
+  const statusEl = document.getElementById("leaderboard-status");
   const { escapeHtml, formatDuration } = window.Utils;
   const Icons = window.Icons;
 
-  function getLastResult() {
+  // La squadra appena arrivata dal gioco resta evidenziata a ogni aggiornamento.
+  const lastResult = readLastResult();
+  let lastRendered = "";
+
+  function readLastResult() {
     try {
       const raw = sessionStorage.getItem("its-quest-last-result");
+      sessionStorage.removeItem("its-quest-last-result");
       return raw ? JSON.parse(raw) : null;
     } catch (err) {
       return null;
@@ -19,13 +28,10 @@
     const noticeHtml = notice ? `<p class="offline-notice">${notice}</p>` : "";
 
     if (entries.length === 0) {
-      container.innerHTML = `${noticeHtml}<p class="empty-state">Nessuna squadra ha ancora giocato oggi.<br/>Siate i primi! ${Icons.svg("gamepad", "icon-inline-muted")}</p>`;
-      return;
+      return `${noticeHtml}<p class="empty-state">Nessuna squadra ha ancora giocato oggi.<br/>Siate i primi! ${Icons.svg("gamepad", "icon-inline-muted")}</p>`;
     }
 
-    const lastResult = getLastResult();
     let highlightedOnce = false;
-
     const rows = entries
       .map((e) => {
         const medal = e.rank <= 3 ? Icons.svg("award", `medal medal-${e.rank}`) : e.rank;
@@ -44,7 +50,7 @@
       })
       .join("");
 
-    container.innerHTML = `
+    return `
       ${noticeHtml}
       <table class="leaderboard-table">
         <thead>
@@ -58,23 +64,46 @@
         <tbody>${rows}</tbody>
       </table>
     `;
-    sessionStorage.removeItem("its-quest-last-result");
+  }
+
+  // Ridisegna solo se qualcosa è cambiato: niente sfarfallii sul proiettore.
+  function show(html) {
+    if (html !== lastRendered) {
+      container.innerHTML = html;
+      lastRendered = html;
+    }
   }
 
   async function load() {
     try {
-      const res = await fetch("/api/leaderboard?limit=100");
+      const res = await fetch("/api/leaderboard?limit=100", { cache: "no-store" });
       const data = await res.json();
       if (!data.ok || !Array.isArray(data.entries)) throw new Error("risposta non valida");
-      render(data.entries);
+      show(render(data.entries));
+      const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      statusEl.textContent = `Si aggiorna da sola · ultimo aggiornamento ${time}`;
     } catch (err) {
-      render(
-        window.LocalScores.today(),
-        "Il server del gioco non risponde: questa è la classifica salvata solo su questo dispositivo. " +
-          "Per la classifica condivisa avviate il gioco con AVVIA-GIOCO.bat e aprite http://localhost:3000."
+      show(
+        render(
+          window.LocalScores.today(),
+          "Il server del gioco non risponde: questa è la classifica salvata solo su questo dispositivo. " +
+            "Per la classifica condivisa avviate il gioco con AVVIA-GIOCO.bat e aprite http://localhost:3000."
+        )
       );
+      statusEl.textContent = "Server non raggiungibile: riprovo tra pochi secondi…";
     }
   }
 
-  load();
+  // Aggiornamento periodico; in pausa quando la scheda non è visibile.
+  let timer = null;
+  function schedule() {
+    clearTimeout(timer);
+    if (!document.hidden) timer = setTimeout(() => load().then(schedule), REFRESH_MS);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) clearTimeout(timer);
+    else load().then(schedule);
+  });
+
+  load().then(schedule);
 })();
