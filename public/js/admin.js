@@ -17,6 +17,23 @@
   const logoutBtn = document.getElementById("logout-btn");
 
   let password = sessionStorage.getItem(PASSWORD_KEY) || "";
+
+  // Indietro: torna alla pagina da cui si è arrivati (home o classifica);
+  // se si è aperto admin.html direttamente, va alla home.
+  const backBtn = document.getElementById("back-btn");
+  backBtn.innerHTML = `${window.Icons.svg("arrowLeft")} Indietro`;
+  backBtn.addEventListener("click", (e) => {
+    let fromThisSite = false;
+    try {
+      fromThisSite = new URL(document.referrer).origin === location.origin;
+    } catch (err) {
+      // nessuna pagina di provenienza
+    }
+    if (fromThisSite && history.length > 1) {
+      e.preventDefault();
+      history.back();
+    }
+  });
   let limits = { min: 5, max: 120 };
   let savedTime = null;
   let currentTime = null;

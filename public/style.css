@@ -328,9 +328,41 @@ button {
 }
 
 .card-hero {
+  position: relative;
   padding-top: 30px;
   padding-bottom: 26px;
   text-align: center;
+}
+
+/* Pulsante "Indietro" nell'angolo in alto a sinistra della fascia colorata */
+.back-btn {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid oklch(100% 0 0 / 0.35);
+  background: oklch(100% 0 0 / 0.12);
+  color: var(--color-on-primary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--duration-fast) ease;
+}
+
+.back-btn:hover {
+  background: oklch(100% 0 0 / 0.22);
+}
+
+/* Sui telefoni il titolo scende un po' per non finire sotto il pulsante */
+@media (max-width: 520px) {
+  .card-hero:has(.back-btn) {
+    padding-top: 58px;
+  }
 }
 
 .eyebrow {
