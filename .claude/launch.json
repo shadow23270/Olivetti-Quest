@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "its-olivetti-quest",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server.js"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "its-olivetti-quest-prova",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "process.env.PORT='3077';process.env.DATA_DIR='data-test';require('./server.js')"
+      ],
+      "port": 3077
+    }
+  ]
+}

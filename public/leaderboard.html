@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ITS Olivetti Quest - Classifica</title>
+<meta name="theme-color" content="#060b26" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <span class="brand">
+      <img class="brand-logo" src="assets/logo-its-olivetti-bianco.svg" alt="ITS Academy Adriano Olivetti" />
+    </span>
+    <span class="site-header-right">
+      <span class="brand-game">Olivetti Quest</span>
+      <button type="button" class="fullscreen-btn" id="fullscreen-btn">Schermo intero</button>
+      <a href="admin.html" class="admin-link" title="Pannello admin (organizzatori)" aria-label="Pannello admin"></a>
+    </span>
+  </header>
+  <main class="cabinet cabinet--medium">
+    <div class="card-hero">
+      <span class="eyebrow">Olivetti Quest</span>
+      <h1 class="title title--small">Classifica di oggi</h1>
+    </div>
+    <div id="leaderboard-content" class="center" aria-live="polite">Caricamento...</div>
+    <div class="link-row">
+      <a href="index.html" class="btn-arcade secondary">Nuova partita</a>
+    </div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/local-scores.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/header.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>ITS Olivetti Quest - Admin</title>
+<meta name="theme-color" content="#060b26" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="ITS Academy Adriano Olivetti – pagina iniziale">
+      <img class="brand-logo" src="assets/logo-its-olivetti-bianco.svg" alt="ITS Academy Adriano Olivetti" />
+    </a>
+    <span class="site-header-right">
+      <span class="brand-game">Olivetti Quest</span>
+      <button type="button" class="fullscreen-btn" id="fullscreen-btn">Schermo intero</button>
+    </span>
+  </header>
+  <main class="cabinet cabinet--wide">
+    <div class="card-hero">
+      <span class="eyebrow">Olivetti Quest</span>
+      <h1 class="title title--small">Pannello admin</h1>
+    </div>
+
+    <form id="login-form" autocomplete="off">
+      <p class="subtitle">Accesso riservato all'organizzatore: scrivi la parola segreta.</p>
+      <input type="password" id="admin-password" placeholder="Parola segreta" required />
+      <p class="error-msg" id="login-error" aria-live="polite"></p>
+      <button type="submit" class="btn-arcade" id="login-btn">Entra</button>
+    </form>
+
+    <section id="settings-panel" hidden>
+      <!-- Azioni rapide sempre in cima -->
+      <nav class="admin-toolbar" aria-label="Azioni rapide">
+        <a href="leaderboard.html" class="btn-arcade secondary" target="_blank" rel="noopener">Apri la classifica</a>
+        <a href="index.html" class="btn-arcade secondary">Torna al gioco</a>
+        <button type="button" class="btn-arcade secondary" id="logout-btn">Esci da admin</button>
+      </nav>
+
+      <div class="admin-grid">
+        <div class="admin-box">
+          <p class="sedi-label center">CLASSIFICA DI OGGI</p>
+          <p class="center admin-note">
+            Elimina le squadre di prova o con nomi non adatti. "Azzera" cancella tutta la
+            classifica di oggi (ne resta una copia di sicurezza in <code>data/</code>).
+            Ogni pulsante chiede un secondo clic di conferma.
+          </p>
+          <div id="admin-scores" class="admin-scores" aria-live="polite">Caricamento...</div>
+          <button type="button" class="btn-arcade danger mt-16" id="reset-btn">Azzera la classifica di oggi</button>
+          <p class="error-msg" id="scores-msg" aria-live="polite"></p>
+        </div>
+
+        <div class="admin-box">
+          <p class="sedi-label center">TEMPO BASE DEI MINIGIOCHI</p>
+          <div class="time-control">
+            <button type="button" class="btn-arcade secondary time-step" data-step="-5">-5</button>
+            <button type="button" class="btn-arcade secondary time-step" data-step="-1">-1</button>
+            <div class="time-value"><span id="time-value">--</span>s</div>
+            <button type="button" class="btn-arcade secondary time-step" data-step="1">+1</button>
+            <button type="button" class="btn-arcade secondary time-step" data-step="5">+5</button>
+          </div>
+          <p class="center admin-note" id="limits-note"></p>
+          <button type="button" class="btn-arcade" id="save-btn">Salva</button>
+          <p class="error-msg" id="save-msg" aria-live="polite"></p>
+          <ul class="admin-note admin-rules">
+            <li><strong>Quiz:</strong> tempo per ogni domanda</li>
+            <li><strong>Memory:</strong> tempo base × numero di coppie (minimo 30s)</li>
+            <li><strong>Acchiappa:</strong> più tempo = parole più lente (da 2,5 a 10s di caduta)</li>
+            <li><strong>Indovina la parola:</strong> il doppio del tempo per ogni parola (minimo 20s)</li>
+          </ul>
+          <p class="center admin-note">
+            La modifica vale dal livello successivo anche per chi sta già giocando.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/header.js"></script>
+</body>
+</html>
