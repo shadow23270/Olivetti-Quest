@@ -1,6 +1,7 @@
 /* Classifica: salvata su Upstash Redis se configurato (Vercel), altrimenti in
  * data/scores.json (PC dell'open day). Tutte le funzioni sono asincrone e
- * hanno lo stesso comportamento con i due sistemi. */
+ * hanno lo stesso comportamento con i due sistemi; i punteggi più vecchi di 30
+ * giorni (PRUNE_DAYS, solo file) vengono potati al riavvio e a ogni aggiunta. */
 
 const fs = require("fs");
 const path = require("path");
@@ -9,6 +10,19 @@ const DATA_DIR = require("./data-dir.js");
 const redis = require("./redis.js");
 
 const BACKUP_DAYS = 30; // per quanto tempo Redis tiene le copie degli azzeramenti
+
+// I punteggi di più di 30 giorni fa non sono più visibili da nessuna parte:
+// potati a ogni aggiunta e al riavvio, il file resta piccolo anche se il
+// server gira a lungo. (Su Redis ogni giorno è un hash a parte: si lasciano.)
+const PRUNE_DAYS = 30;
+const PRUNE_MS = PRUNE_DAYS * 24 * 60 * 60 * 1000;
+
+// Restano i punteggi con una corretta data di creazione recente: le voci rovinate
+// o antiche vengono scartate davanti.
+function recentEnough(entry) {
+  const at = Date.parse(entry.createdAt || "");
+  return Number.isFinite(at) && at >= Date.now() - PRUNE_MS;
+}
 
 function newEntry({ name, score, levelsCompleted, durationMs }) {
   return {
@@ -106,6 +120,10 @@ function createFileStore() {
       const raw = fs.readFileSync(DATA_FILE, "utf8");
       scores = JSON.parse(raw);
       if (!Array.isArray(scores)) throw new Error("il file non contiene una lista");
+      // All'avvio si potano i punteggi vecchi: se cambiano qualcosa si riscrive subito.
+      const before = scores.length;
+      pruneOld();
+      if (scores.length !== before) persist();
     } catch (err) {
       // Il file rovinato viene messo da parte prima che il prossimo punteggio lo
       // sovrascriva, così la classifica si può ancora recuperare a mano.
@@ -130,12 +148,19 @@ function createFileStore() {
     fs.renameSync(tmp, DATA_FILE);
   }
 
+  // Via i punteggi oltre la finestra di 30 giorni: si chiama a ogni aggiunta,
+  // così il pruning non deve aspettare il riavvio.
+  function pruneOld() {
+    scores = scores.filter(recentEnough);
+  }
+
   load();
 
   return {
     kind: "file data/scores.json",
     async addScore(data) {
       const entry = newEntry(data);
+      pruneOld();
       scores.push(entry);
       persist();
       return entry;

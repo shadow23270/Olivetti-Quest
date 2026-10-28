@@ -145,6 +145,11 @@
   }
 
   function hudHtml() {
+    // Ogni nuova schermata di gioco riparte dall'inizio della card (durante
+    // il minigioco, quando serve, a scorrere è la card stessa, non la pagina).
+    const cabinet = app.closest(".cabinet");
+    if (cabinet) cabinet.scrollTop = 0;
+    window.scrollTo(0, 0);
     return `<div id="hud">${hudInnerHtml()}</div>`;
   }
 
@@ -233,6 +238,9 @@
 
   function openScope() {
     closeScope();
+    // Minigioco attivo: la pagina non scorre (niente scroll accidentali mentre
+    // si tocca in fretta). Lo scroll torna al termine del livello (closeScope).
+    document.body.classList.add("is-playing");
     const timeouts = new Set();
     const intervals = new Set();
     const listeners = [];
@@ -290,6 +298,7 @@
       scope.close();
       scope = null;
     }
+    document.body.classList.remove("is-playing");
     gameOverShown = false;
     setSkipArmed(false);
   }
@@ -665,6 +674,7 @@
         JSON.stringify({ name: teamName, score: state.score })
       );
       sessionStorage.removeItem("its-quest-team");
+      sessionStorage.removeItem("its-quest-token");
       window.location.href = "leaderboard.html?justPlayed=1";
     }
 
@@ -682,6 +692,7 @@
             score: state.score,
             levelsCompleted: totalLevels,
             durationMs,
+            token: sessionStorage.getItem("its-quest-token"),
           }),
         });
         const data = await res.json();

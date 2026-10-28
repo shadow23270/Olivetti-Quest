@@ -1,11 +1,13 @@
 const path = require("path");
 const crypto = require("crypto");
+const os = require("os");
 const express = require("express");
 const ProfanityFilter = require("./public/js/profanity.js");
 const ITS_LEVELS = require("./public/js/courses.js");
 const Scoring = require("./public/js/scoring.js");
 const store = require("./store.js");
 const settings = require("./settings.js");
+const gameToken = require("./game-token.js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,17 +19,10 @@ const MAX_DURATION_MS = 3 * 60 * 60 * 1000; // 3 ore, oltre è chiaramente anoma
 
 // Parola segreta dell'admin: scritta come nome della squadra nella pagina iniziale
 // apre il pannello admin (si può anche usare come password in /admin.html).
-// Predefinita: "daddala". Per cambiarla impostate la variabile d'ambiente
-// ADMIN_PASSWORD. Resta solo sul server: non compare nel codice delle pagine.
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "daddala";
-if (!process.env.ADMIN_PASSWORD) {
-  console.log('Parola segreta admin: quella predefinita (per cambiarla impostate ADMIN_PASSWORD).');
-}
-
-// Blocco dei tentativi: dopo 5 password sbagliate lo stesso IP aspetta 10 minuti.
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_MS = 10 * 60 * 1000;
-const failedAttempts = new Map();
+// È fissa, decisa con l'organizzatore: serve a non dare a chi guarda l'open day i
+// comandi dell'organizzatore, non a fermare chi conosce questo repository.
+// Resta solo sul server: non compare nel codice delle pagine.
+const ADMIN_PASSWORD = "daddala";
 
 // Confronto senza distinzione tra maiuscole e minuscole (dal telefono capita
 // di scrivere "Daddala"), a tempo costante.
@@ -38,64 +33,69 @@ function passwordMatches(candidate) {
 }
 
 function requireAdmin(req, res, next) {
-  const ip = req.ip;
-  const record = failedAttempts.get(ip);
-  if (record && record.lockedUntil > Date.now()) {
-    const minutes = Math.ceil((record.lockedUntil - Date.now()) / 60000);
-    return res
-      .status(429)
-      .json({ ok: false, reason: `Troppi tentativi errati. Riprova tra ${minutes} minuti.` });
-  }
-
   if (!passwordMatches(req.get("x-admin-password"))) {
-    const lockExpired = record && record.lockedUntil && record.lockedUntil <= Date.now();
-    const fails = (record && !lockExpired ? record.fails : 0) + 1;
-    failedAttempts.set(ip, {
-      fails,
-      lockedUntil: fails >= MAX_FAILED_ATTEMPTS ? Date.now() + LOCKOUT_MS : 0,
-    });
     return res.status(401).json({ ok: false, reason: "Parola segreta errata." });
   }
-
-  failedAttempts.delete(ip);
   next();
 }
 
 // Su Render/Railway l'IP reale arriva dal proxy. In locale invece l'intestazione
 // X-Forwarded-For la può scrivere chiunque: fidarsene permetterebbe di cambiare
-// IP a ogni tentativo e aggirare il blocco della parola segreta.
+// IP a ogni richiesta e aggirare i limiti di frequenza per dispositivo.
 if (process.env.TRUST_PROXY || process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL) {
   app.set("trust proxy", 1);
 }
+
+// Header di sicurezza di base su tutte le risposte: il browser non deve indovinare
+// i tipi dei file (nosniff) e le pagine del gioco non si possono incorniciare in un
+// altro sito (same-origin frame, anti-clickjacking).
+app.use((req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// Limite di richieste per il controllo del nome: evita che qualcuno provi a
-// indovinare la parola segreta inviando migliaia di nomi.
-const CHECK_NAME_LIMIT = 30; // richieste al minuto per dispositivo
-const checkNameHits = new Map();
+// Limite di richieste: ogni endpoint ha il suo contatore per dispositivo (IP),
+// che blocca le chiamate oltre una soglia al minuto.
+function createRateLimiter(maxPerMinute) {
+  const hits = new Map();
 
-function tooManyChecks(ip) {
-  const now = Date.now();
-  const recent = (checkNameHits.get(ip) || []).filter((t) => now - t < 60000);
-  recent.push(now);
-  checkNameHits.set(ip, recent);
-  return recent.length > CHECK_NAME_LIMIT;
+  function tooMany(ip) {
+    const now = Date.now();
+    const recent = (hits.get(ip) || []).filter((t) => now - t < 60000);
+    recent.push(now);
+    hits.set(ip, recent);
+    return recent.length > maxPerMinute;
+  }
+
+  // Pulizia periodica: gli IP che non richiedono da un minuto non servono più.
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, times] of hits) {
+      if (times.every((t) => now - t >= 60000)) hits.delete(ip);
+    }
+  }, 5 * 60 * 1000).unref();
+
+  return { tooMany };
 }
 
-// Pulizia periodica: gli IP che non scrivono da un minuto non servono più.
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, hits] of checkNameHits) {
-    if (hits.every((t) => now - t >= 60000)) checkNameHits.delete(ip);
-  }
-  for (const [ip, record] of failedAttempts) {
-    if (record.lockedUntil && record.lockedUntil <= now) failedAttempts.delete(ip);
-  }
-}, 5 * 60 * 1000).unref();
+// Controllo del nome: 30 richieste al minuto per dispositivo, limite anti-spam
+// (il nome viene comunque controllato di nuovo su /api/score).
+const checkNameLimiter = createRateLimiter(30);
+
+// Avvio della partita: una squadra ne fa uno solo, margine largo per i picchi.
+const startGameLimiter = createRateLimiter(30);
+
+// Invio dei punteggi: una squadra vera ne manda uno solo. 12 al minuto per
+// dispositivo assorbono i picchi (più squadre sulla stessa rete del luogo)
+// e bloccano lo spam di voci inventate in classifica.
+const scoreLimiter = createRateLimiter(12);
 
 app.post("/api/check-name", (req, res) => {
-  if (tooManyChecks(req.ip)) {
+  if (checkNameLimiter.tooMany(req.ip)) {
     return res.status(429).json({ ok: false, reason: "Troppi tentativi, aspetta un minuto." });
   }
   const { name } = req.body || {};
@@ -114,6 +114,20 @@ const handle = (fn) => (req, res, next) =>
     console.error(err);
     res.status(500).json({ ok: false, reason: "Errore del server, riprova tra poco." });
   });
+
+// Firma il token che autorizza l'invio del punteggio: contiene nome squadra e
+// momento d'inizio, verificati da /api/score (vedi game-token.js).
+app.post("/api/start-game", handle(async (req, res) => {
+  if (startGameLimiter.tooMany(req.ip)) {
+    return res.status(429).json({ ok: false, reason: "Troppi avvii di partita, aspetta un minuto." });
+  }
+  const { name } = req.body || {};
+  const check = ProfanityFilter.isClean(name);
+  if (!check.ok) {
+    return res.status(400).json({ ok: false, reason: check.reason });
+  }
+  res.json({ ok: true, token: gameToken.issue(String(name).trim()) });
+}));
 
 app.get("/api/settings", handle(async (req, res) => {
   res.json({ ok: true, questionTimeSec: (await settings.get()).questionTimeSec });
@@ -160,11 +174,24 @@ app.post("/api/admin/reset", requireAdmin, handle(async (req, res) => {
 }));
 
 app.post("/api/score", handle(async (req, res) => {
-  const { name, score, levelsCompleted, durationMs } = req.body || {};
+  if (scoreLimiter.tooMany(req.ip)) {
+    return res.status(429).json({ ok: false, reason: "Troppi punteggi inviati: aspetta un minuto." });
+  }
+
+  const { name, score, levelsCompleted, durationMs, token } = req.body || {};
 
   const nameCheck = ProfanityFilter.isClean(name);
   if (!nameCheck.ok) {
     return res.status(400).json({ ok: false, reason: nameCheck.reason });
+  }
+
+  const playerName = String(name).trim();
+
+  // Il punteggio vale solo con il token firmato da /api/start-game: senza firma
+  // valida, col nome cambiato o con una sessione impossibile, si scarta.
+  const checkToken = gameToken.verify(token, playerName);
+  if (!checkToken.ok) {
+    return res.status(401).json({ ok: false, reason: "Token di partita mancante o non valido." });
   }
 
   if (
@@ -187,13 +214,17 @@ app.post("/api/score", handle(async (req, res) => {
     typeof durationMs !== "number" ||
     !Number.isFinite(durationMs) ||
     durationMs < 0 ||
-    durationMs > MAX_DURATION_MS
+    durationMs > MAX_DURATION_MS ||
+    // La durata dichiarata non può superare il tempo passato davvero da quando
+    // la partita è stata firmata (con un margine per l'orologio del client
+    // fuori fase: vedi CLOCK_SKEW_MS in game-token.js).
+    durationMs > Date.now() - checkToken.startMs + gameToken.CLOCK_SKEW_MS
   ) {
     return res.status(400).json({ ok: false, reason: "Durata partita non valida." });
   }
 
   const entry = await store.addScore({
-    name: String(name).trim(),
+    name: playerName,
     score,
     levelsCompleted,
     durationMs,
@@ -209,12 +240,34 @@ app.get("/api/leaderboard", handle(async (req, res) => {
   res.json({ ok: true, entries: await store.getTodayLeaderboard(limit) });
 }));
 
+// Primo indirizzo di rete del computer (quello che i telefoni nella stessa
+// rete possono aprire), mostrato in grande sulla pagina classifica quando
+// questa è aperta su "localhost". Su Vercel gli indirizzi interni della
+// funzione non sarebbero quelli pubblici: si risponde null e la pagina mostra
+// il dominio che ha nella sua barra degli indirizzi.
+function lanAddress() {
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const net of list) {
+      if (net.family === "IPv4" && !net.internal) {
+        return `http://${net.address}:${PORT}`;
+      }
+    }
+  }
+  return null;
+}
+
+app.get("/api/address", (req, res) => {
+  res.json({ ok: true, address: process.env.VERCEL ? null : lanAddress() });
+});
+
 // Su Vercel l'app viene importata ed eseguita come funzione: niente listen.
 module.exports = app;
 
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`ITS Olivetti Quest in ascolto su http://localhost:${PORT}`);
+    const lan = lanAddress();
+    if (lan) console.log(`Indirizzo per i telefoni nella stessa rete: ${lan}`);
     console.log(`Classifica salvata su: ${store.kind}`);
   });
 

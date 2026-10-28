@@ -141,6 +141,11 @@ body::before {
 
 button {
   font-family: inherit;
+  /* Gioca al telefono: niente zoom col doppio tocco e niente testo che si
+     seleziona per sbaglio quando si tocca in fretta i pulsanti di gioco. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 :where(button, a, input, [tabindex]):focus-visible {
@@ -1175,6 +1180,150 @@ input[type="password"]:focus {
   border-color: var(--color-primary-soft);
 }
 
+/* Podio: i primi 3 in tre colonne, con il 1° posto al centro, più in alto
+   e con la barra più lunga (l'ordine visuale lo decide la proprietà "order").
+   Dal 4° posto in poi la classifica resta la tabella di prima. */
+.podium {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 8px 0 18px;
+}
+
+.podium-slot {
+  order: 3;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.podium-slot--2 {
+  order: 1;
+}
+
+.podium-slot--1 {
+  order: 2;
+}
+
+.podium-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-tile);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: 14px 8px 12px;
+}
+
+.podium-medal {
+  display: inline-flex;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.podium-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--color-on-background);
+  overflow-wrap: anywhere;
+}
+
+.podium-score {
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--color-on-primary);
+}
+
+/* Barre "gradoni": quella del 1° posto è la più alta. */
+.podium-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  font-weight: 800;
+  color: var(--color-on-background-muted);
+  background: var(--color-tile);
+  border: 1px solid var(--color-line);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.podium-slot--2 .podium-bar {
+  height: 56px;
+}
+
+.podium-slot--3 .podium-bar {
+  height: 40px;
+}
+
+.podium-slot--1 .podium-card {
+  border-color: oklch(83.7% 0.164 84 / 0.5);
+  box-shadow: 0 0 26px oklch(83.7% 0.164 84 / 0.16);
+}
+
+.podium-slot--1 .podium-medal {
+  font-size: 40px;
+  color: var(--color-gold);
+}
+
+.podium-slot--1 .podium-name {
+  font-size: var(--text-base);
+  color: var(--color-on-primary);
+}
+
+.podium-slot--1 .podium-bar {
+  height: 80px;
+  font-size: var(--text-xl);
+  color: var(--color-gold);
+  background: oklch(83.7% 0.164 84 / 0.14);
+  border-color: oklch(83.7% 0.164 84 / 0.45);
+}
+
+.podium-slot.you .podium-card {
+  background: oklch(51.1% 0.248 264 / 0.3);
+  border-color: var(--color-primary-soft);
+}
+
+/* Blocco "Gioca ora": solo l'indirizzo del gioco, scritto grande per essere
+   letto (e battuto a telefono) anche dal fondo della sala. */
+.play-url {
+  margin: 6px 0 14px;
+  padding: 18px 16px;
+  text-align: center;
+  background: var(--color-tile);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+
+.play-url-title {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-primary-soft);
+}
+
+.play-url-address {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-on-primary);
+  overflow-wrap: anywhere;
+}
+
+.play-url-hint {
+  margin: 6px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-on-background-muted);
+}
+
 .leaderboard-status {
   margin: 0 0 var(--space-4);
   text-align: center;
@@ -1920,6 +2069,84 @@ input[type="password"]:focus {
   opacity: 0.6;
 }
 
+/* ================= MODALITÀ GIOCO (minigioco attivo) =================
+   Mentre un minigioco è in corso la pagina non scorre: il pollice che tocca
+   in fretta non sposta più domanda e tastiera (game.js aggiunge e toglie la
+   classe "is-playing" sul body insieme al "scope" del livello). Se il
+   contenuto non ci sta (font ingranditi dal sistema, telefoni piccoli)
+   a scorrere è solo la card, così tutto resta raggiungibile. */
+
+body.is-playing {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  row-gap: 8px;
+  padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Rete di sicurezza: durante il gioco scorre solo la card, mai la pagina. */
+body.is-playing .cabinet {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Un filo di compattezza in più sui telefoni, così il minigioco ci sta tutto. */
+@media (max-width: 520px) {
+  body.is-playing .brand-logo {
+    height: 40px;
+  }
+
+  body.is-playing .cabinet {
+    --pad-y: 18px;
+    --pad-x: 16px;
+    padding: var(--pad-y) var(--pad-x) 20px;
+  }
+
+  body.is-playing #hud {
+    padding: 14px 14px 12px;
+    margin-bottom: 10px;
+  }
+
+  body.is-playing .timer-bar-track {
+    margin-bottom: 12px;
+  }
+
+  body.is-playing .question {
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+
+  body.is-playing .options {
+    gap: 8px;
+  }
+
+  body.is-playing .option-btn {
+    min-height: 50px;
+    padding: 10px 14px;
+  }
+
+  /* Tastiera: 6 lettere per riga invece di 7, così su uno schermo da 360px
+     ogni tasto resta largo ~45px (bersaglio toccabile) invece di ~37. */
+  .keyboard {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+}
+
+/* Telefoni piccolissimi: 5 colonne e card un po' più stretta. */
+@media (max-width: 360px) {
+  .cabinet {
+    --pad-x: 14px;
+  }
+
+  .keyboard {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 /* ================= COMPUTER / SCHERMI GRANDI =================
    I testi crescono già da soli (clamp); qui cambia solo l'impaginazione. */
 
@@ -2041,8 +2268,10 @@ input[type="password"]:focus {
     max-width: 1320px;
   }
 
+  /* La classifica è la pagina che sta più tempo sul proiettore: card larga e
+     testi più grandi, per essere letti anche dal fondo della sala. */
   .cabinet--medium {
-    max-width: 960px;
+    max-width: 1320px;
   }
 
   .option-btn {
@@ -2051,6 +2280,69 @@ input[type="password"]:focus {
 
   .memory-card {
     min-height: 140px;
+  }
+
+  .leaderboard-table th {
+    font-size: var(--text-sm);
+    padding: 10px 16px;
+  }
+
+  .leaderboard-table td {
+    font-size: var(--text-lg);
+    padding: 16px 18px;
+  }
+
+  .podium {
+    gap: 18px;
+    margin-bottom: 26px;
+  }
+
+  .podium-card {
+    padding: 22px 14px 18px;
+  }
+
+  .podium-name {
+    font-size: var(--text-lg);
+  }
+
+  .podium-score {
+    font-size: var(--text-2xl);
+  }
+
+  .podium-medal {
+    font-size: 44px;
+  }
+
+  .podium-slot--1 .podium-medal {
+    font-size: 58px;
+  }
+
+  .podium-slot--2 .podium-bar {
+    height: 64px;
+  }
+
+  .podium-slot--1 .podium-bar {
+    height: 104px;
+  }
+
+  .play-url {
+    padding: 24px 28px;
+  }
+
+  .play-url-title {
+    font-size: var(--text-base);
+  }
+
+  .play-url-address {
+    font-size: var(--text-2xl);
+  }
+
+  .play-url-hint {
+    font-size: var(--text-sm);
+  }
+
+  .leaderboard-status {
+    font-size: var(--text-sm);
   }
 }
 

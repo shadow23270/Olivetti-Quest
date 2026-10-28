@@ -80,10 +80,29 @@ resta bloccato e tutti vedono le schede di tutti i corsi.
   mostra solo le partite giocate **nel giorno corrente** (fuso orario Europa/Roma).
   Se il server non risponde, i punteggi vengono salvati nel browser
   (`public/js/local-scores.js`) e la classifica mostra quelli del dispositivo.
+- **Classifica per il proiettore**: i primi 3 posti vanno in un podio a tre colonne
+  (1° posto al centro, più in evidenza), dal 4° in poi si resta in tabella; a schermi
+  grandissimi (≥1400px) card e testi si allargano per essere letti dal fondo della
+  sala. Sotto la classifica c'è il blocco "Gioca ora" con l'indirizzo scritto in
+  grande: se la pagina è aperta su "localhost", il server risponde con il suo
+  indirizzo di rete (`/api/address`), quello che i telefoni possono davvero usare.
+  La classifica e il podio si aggiornano da soli ogni 3,5 secondi, senza ricaricare
+  la pagina.
+- **Niente scroll durante i minigiochi**: mentre un minigioco è in corso la pagina
+  non scorre, così su telefono un tocco di troppo non sposta domanda o tastiera; se
+  il contenuto non ci sta (font ingranditi dal sistema) a scorrere è solo la card.
 - **Filtro nomi**: `public/js/profanity.js` blocca i nomi squadra volgari o offensivi
   (italiano + inglese, comprese le varianti con numeri al posto delle lettere, tipo
   "c4zz0"). Il controllo avviene sia nel browser (feedback immediato) sia sul
   server, che è l'unico a decidere: modificando il browser non si aggira.
+- **Punteggi protetti**: all'avvio della partita il server firma un token
+  (`game-token.js`, HMAC-SHA256 con `crypto` nativo) che contiene nome squadra e
+  ora d'inizio. Per entrare in classifica serve quel token: vale solo per quella
+  squadra e solo se la sessione ha una durata plausibile (né istantanea, né oltre
+  4 ore) e la durata dichiarata non supera quella passata davvero. Un dispositivo
+  può pubblicare al massimo 12 punteggi al minuto. Il segreto della firma: variabile
+  d'ambiente `SCORE_SECRET`; in locale viene creato `data/token-secret` (escluso
+  dal repository), su Vercel serve sempre `SCORE_SECRET`.
 
 ## Pannello admin: tempo per rispondere
 
@@ -100,10 +119,11 @@ secondi, predefinito 20). Ogni minigioco lo usa così:
   maiuscole, es. "Daddala"). In alternativa aprite `/admin.html` e scrivete la parola.
 - Dal pannello si cambia il tempo con −5 / −1 / +1 / +5, si preme *Salva* e poi
   *Torna al gioco*.
-- La parola segreta resta **solo sul server** (non compare nel codice delle pagine).
-  Per cambiarla impostate la variabile d'ambiente **`ADMIN_PASSWORD`** sul server.
-- Dopo 5 parole sbagliate dallo stesso dispositivo l'accesso si blocca per 10 minuti,
-  e il controllo dei nomi accetta al massimo 30 tentativi al minuto per dispositivo.
+- La parola segreta è **fissa: `daddala`** e resta **solo sul server** (non compare
+  nel codice delle pagine). Serve a non dare a chi guarda l'open day i comandi
+  dell'organizzatore: chi conosce questo repository la conosce comunque.
+- Il controllo dei nomi accetta al massimo 30 richieste al minuto per dispositivo
+  (limite anti-spam).
 - La modifica vale dal livello successivo, anche per chi sta già giocando.
 - Il bonus velocità è proporzionale al tempo: il punteggio massimo non cambia
   se allungate o accorciate il timer.
@@ -140,6 +160,10 @@ con pre-iscrizioni aperte. 3D Art Specialist è escluso perché ha le iscrizioni
 21 non si divide per 4, quindi l'ultimo livello ha 5 corsi.
 Prima di un nuovo open day ricontrollate il sito e aggiornate il file se qualcosa è cambiato.
 
+Le regole dei punti e il filtro dei nomi sono coperti da test automatici: da terminale
+`npm test` (test runner nativo di Node.js, zero dipendenze). Se toccate
+`public/js/scoring.js` o `public/js/profanity.js`, fateli girare.
+
 ## Pubblicare il gioco online (accessibile da più dispositivi)
 
 Il modo più semplice e gratuito è [Render.com](https://render.com):
@@ -150,8 +174,9 @@ Il modo più semplice e gratuito è [Render.com](https://render.com):
 3. Impostazioni:
    - **Build Command**: `npm install`
    - **Start Command**: `node server.js`
-   - **Environment** -> aggiungete `ADMIN_PASSWORD` con una password scelta da voi
-     (lunga e non banale; non scrivetela nel codice né nel repository).
+   - **Environment** -> aggiungete `SCORE_SECRET` con una stringa casuale lunga e
+      non banale (firma i token dei punteggi: senza, i punteggi possono essere
+      rifiutati; vedi "Punteggi protetti").
 4. Deploy. Render vi darà un indirizzo tipo `https://its-olivetti-quest.onrender.com`
    da condividere (per esempio con un QR code) durante l'open day.
    Il pannello admin sarà su `https://.../admin.html`.
@@ -169,6 +194,7 @@ problema: basta non rifare il deploy a metà giornata.
 server.js              Server Express + API classifica e admin
 store.js               Salvataggio/lettura punteggi su data/scores.json
 settings.js            Tempo di risposta salvato su data/settings.json
+game-token.js          Token di partita firmati (HMAC) richiesti per inviare i punteggi
 public/
   index.html           Schermata iniziale (nome squadra)
   game.html            Schermata di gioco (5 livelli)

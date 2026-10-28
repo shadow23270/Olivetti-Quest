@@ -48,6 +48,24 @@
         return;
       }
 
+      // Il server firma il token di partita (nome squadra + ora d'inizio): servirà
+      // alla fine per pubblicare il punteggio. Se ora il server non risponde si
+      // gioca lo stesso: il punteggio finirà nella classifica di questo dispositivo.
+      sessionStorage.removeItem("its-quest-token");
+      try {
+        const startRes = await fetch("/api/start-game", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+        const startData = await startRes.json();
+        if (startData.ok && typeof startData.token === "string") {
+          sessionStorage.setItem("its-quest-token", startData.token);
+        }
+      } catch (err) {
+        // niente server dalla schermata iniziale: si avvia comunque la partita
+      }
+
       sessionStorage.setItem("its-quest-team", name);
       window.location.href = "game.html";
     } catch (err) {

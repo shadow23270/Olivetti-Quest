@@ -8,9 +8,9 @@ Tutti i testi del gioco sono in italiano.
 ## Avvio
 - Windows: doppio clic su `AVVIA-GIOCO.bat` (installa, avvia, apre http://localhost:3000).
 - Oppure: `npm install`, poi `npm start`.
-- Modalità admin: scrivere la parola segreta come nome squadra (predefinita `daddala`,
-  sovrascrivibile con la variabile d'ambiente `ADMIN_PASSWORD`). Resta solo sul server:
-  non metterla nel codice di `public/`.
+- Modalità admin: scrivere la parola segreta come nome squadra (parola fissa
+  `daddala`, definita in `server.js`). Non compare nelle pagine di `public/`,
+  ma chi conosce questo repository la conosce comunque.
 
 ## Online (Vercel)
 - Pubblicato su https://olivetti-quest.vercel.app (progetto Vercel `olivetti-quest`,
@@ -25,18 +25,39 @@ Tutti i testi del gioco sono in italiano.
   Altrimenti usa i file in `data/` (su Vercel `/tmp`, temporaneo e non condiviso tra le
   copie del server: classifica non affidabile finché Redis non è collegato).
 - Sul PC (`AVVIA-GIOCO.bat`) la classifica è sempre condivisa: un solo server, un file.
-- La pagina classifica si aggiorna da sola ogni 5 secondi (`leaderboard.js`).
+- La pagina classifica si aggiorna da sola ogni 3,5 secondi con un polling senza
+  sovrapposizioni (`leaderboard.js`): i primi 3 vanno in un podio a tre colonne
+  (1° posto al centro; stili `.podium-*` in `style.css`), dal 4° si resta in tabella.
+  Sotto c'è il blocco "Gioca ora" con l'indirizzo in grande: su localhost lo chiede
+  a `/api/address` (indirizzo di rete del PC; su Vercel risponde null e resta il
+  dominio della barra degli indirizzi). Nessun QR code.
+- Durante i minigiochi `game.js` mette la classe `is-playing` sul body (insieme al
+  "scope" del livello): la pagina non scorre; a scorrere, se serve, è solo la card.
 
 ## Struttura
-- `server.js` – Express: file statici + API (`/api/check-name`, `/api/score`,
-  `/api/leaderboard`, `/api/settings`, `/api/admin/login`, `/api/admin/settings`,
-  `/api/admin/scores`, `/api/admin/scores/delete`, `/api/admin/reset`).
+- `server.js` – Express: file statici + API (`/api/start-game`, `/api/check-name`, `/api/score`,
+  `/api/leaderboard`, `/api/settings`, `/api/address`, `/api/admin/login`, `/api/admin/settings`,
+  `/api/admin/scores`, `/api/admin/scores/delete`, `/api/admin/reset`). Tutte le
+  risposte portano gli header di sicurezza di base: `X-Content-Type-Options:
+  nosniff` e `X-Frame-Options: SAMEORIGIN`.
   L'admin può eliminare singole squadre e azzerare la classifica di oggi (prima
   dell'azzeramento viene salvata una copia `data/scores.backup-<ora>.json`).
   Valida i punteggi con le regole di `public/js/scoring.js`. In locale non si fida di
   `X-Forwarded-For` (solo su Render/Railway o con `TRUST_PROXY` impostata).
+  `/api/score` accetta solo punteggi con il token firmato da `/api/start-game`
+  (`game-token.js`): nome squadra e ora d'inizio firmati con HMAC (`crypto` nativo),
+  sessione di almeno 10 s e non oltre 4 ore, durata dichiarata non superiore a quella
+  passata davvero (+5 min di margine per l'orologio del client). Limiti di frequenza
+  per IP (in memoria: per istanza su Vercel): 30 al minuto su check-name e
+  start-game, 12 al minuto su score. Segreto della firma: `SCORE_SECRET`; senza,
+  si crea `data/token-secret` (escluso dal repository; su Vercel impostare sempre
+  `SCORE_SECRET`).
 - `store.js` / `settings.js` – classifica e tempo base salvati in `data/*.json`
-  (scrittura atomica: file `.tmp` poi rinomina).
+  (scrittura atomica: file `.tmp` poi rinomina). I punteggi più vecchi di 30
+  giorni vengono potati dal file a ogni aggiunta di punteggio e al riavvio.
+- `game-token.js` – firma e riverifica i token di partita (HMAC con `crypto` nativo):
+  senza token valido, col nome cambiato, con sessione troppo breve o scaduta,
+  `/api/score` rifiuta il punteggio.
 - `public/js/scoring.js` – regole dei punti (100 + bonus velocità fino a 100, stelle,
   punteggio massimo, soglia per superare il livello `PASS_STARS` = 2 stelle),
   condivise tra browser e server. Sotto soglia: schermata "Livello non superato" con
@@ -75,3 +96,5 @@ Tutti i testi del gioco sono in italiano.
 - Per provare punteggi e funzioni admin senza sporcare la classifica vera: server di
   prova con dati separati, `PORT=3077 DATA_DIR=data-test node server.js` (configurazione
   `its-olivetti-quest-prova` in `.claude/launch.json`); poi cancellare `data-test/`.
+- Le regole dei punti e il filtro dei nomi sono coperti da test: `npm test` (test
+  runner nativo di Node, file `test/scoring.test.js`, zero dipendenze).
