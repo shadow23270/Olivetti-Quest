@@ -198,8 +198,10 @@ button {
   flex-shrink: 0;
 }
 
-/* Ingranaggio per il pannello admin: discreto, solo da computer
- * (sui telefoni dei visitatori non compare). */
+/* Ingranaggio per il pannello admin: discreto, visibile anche sui telefoni
+ * (deciso con l'organizzatore, che così può eliminare una squadra sbagliata
+ * al volo dall'evento). Il pannello resta comunque protetto dalla parola
+ * segreta: chi lo apre senza conoscerla non ci entra. */
 .admin-link {
   display: inline-flex;
   align-items: center;
@@ -222,8 +224,16 @@ button {
 }
 
 @media (max-width: 520px) {
-  .admin-link {
+  .brand-game,
+  .fullscreen-btn {
     display: none;
+  }
+
+  /* Bersaglio un po' più grande al tocco. */
+  .admin-link {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
   }
 }
 
