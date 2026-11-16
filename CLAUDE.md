@@ -98,10 +98,11 @@ Tutti i testi del gioco sono in italiano.
 - `scripts/generate-qr.js` – genera il QR promozionale in `promo/` con `npm run qr`
   (dipendenza solo di sviluppo: `qrcode` in devDependencies, il gioco non la usa).
   Punta all'indirizzo pubblico (`https://olivetti-quest.vercel.app`, primo argomento
-  per cambiarlo) con i colori del brand: blu ITS `#0153FF` su bianco, correzione
-  errori alta. Output: PNG 2048px + SVG in `promo/` e copia SVG in
-  `public/assets/qr-gioca.svg`, che la pagina classifica mostra SOLO finché
-  nessuno ha giocato (poi lo toglie da sola).
+  per cambiarlo) con correzione errori alta. Output: PNG 2048px + SVG blu ITS
+  `#0153FF` su bianco in `promo/` (per la presentazione) e copia SVG in
+  `public/assets/qr-gioca.svg` in versione INVERTITA per il tema scuro (moduli
+  bianchi su trasparente, dentro il pannello navy di `.empty-qr`): la pagina
+  classifica la mostra SOLO finché nessuno ha giocato (poi la toglie da sola).
 
 ## Note per le modifiche
 - Le domande devono restare comprensibili a chiunque (niente conoscenze tecniche).

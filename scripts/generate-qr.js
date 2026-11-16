@@ -43,9 +43,17 @@ const outDir = path.join(__dirname, "..", "promo");
   await QRCode.toFile(svgPath, GAME_URL, options);
 
   // Copia servita dal sito: la classifica vuota la mostra al posto della
-  // tabella, poi la toglie da sola quando arriva la prima squadra.
+  // tabella, poi la toglie da sola quando arriva la prima squadra. La pagina
+  // è scura: qui i moduli del codice sono CHIARI su sfondo trasparente (le
+  // fotocamere degli smartphone leggono i QR invertiti), così il codice si
+  // integra col tema e non serve un pannello bianco. Il margine trasparente
+  // (quiet zone) resta intorno ai moduli e sta dentro il pannello scuro
+  // uniforme di .empty-qr in style.css.
   const sitePath = path.join(__dirname, "..", "public", "assets", "qr-gioca.svg");
-  await QRCode.toFile(sitePath, GAME_URL, options);
+  await QRCode.toFile(sitePath, GAME_URL, {
+    ...options,
+    color: { dark: "#FFFFFF", light: "#00000000" },
+  });
 
   console.log("QR code generato, punta a: " + GAME_URL);
   console.log("  PNG (da trascinare nella presentazione): " + pngPath);

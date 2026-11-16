@@ -98,6 +98,7 @@
       return `${noticeHtml}
         <div class="empty-state">
           <div class="empty-qr">
+            <p class="empty-qr-label">Scansiona e gioca</p>
             <img src="assets/qr-gioca.svg" alt="QR code: scansiona e gioca subito" />
           </div>
           <p class="empty-title">Nessuna squadra ha ancora giocato oggi</p>

@@ -1352,9 +1352,13 @@ input[type="password"]:focus {
   margin: 0 0 14px;
 }
 
-/* Classifica ancora vuota: QR verso il gioco su pannello bianco (il codice è
-   blu ITS su bianco, gli stessi colori della presentazione). Appena una
-   squadra completa, il ridisegno automatico lo sostituisce con podio e tabella. */
+/* Classifica ancora vuota: QR verso il gioco, in versione invertita per il
+   tema scuro (moduli chiari su pannello navy solido: le fotocamere degli
+   smartphone leggono i QR invertiti, e così il codice resta coerente con la
+   pagina senza il blocco bianco). Il pannello ha sfondo SOLIDO (uniforme) e
+   margine attorno al codice: servono alla quiet zone delle fotocamere.
+   Appena una squadra completa, il ridisegno automatico lo sostituisce con
+   podio e tabella. */
 .empty-state {
   text-align: center;
   color: var(--color-on-background-muted);
@@ -1362,19 +1366,31 @@ input[type="password"]:focus {
 }
 
 .empty-qr {
-  display: block;
-  width: min(210px, 56vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(230px, 60vw);
   margin: 0 auto 14px;
-  padding: 10px;
-  background: oklch(100% 0 0 / 0.92);
-  border: 1px solid var(--color-line);
+  padding: 14px 14px 12px;
+  background: var(--color-background);
+  border: 1px solid var(--color-line-strong);
   border-radius: var(--radius-lg);
+  box-shadow: 0 0 26px oklch(51.1% 0.248 264 / 0.18);
 }
 
 .empty-qr img {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.empty-qr-label {
+  margin: 0 0 8px;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--color-primary-soft);
 }
 
 .empty-title {
