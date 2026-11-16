@@ -41,8 +41,10 @@ Ogni elemento indovinato (domanda, coppia, parola) vale fino a 150 punti:
 Ogni errore costa una vita: risposta sbagliata o tempo scaduto nel quiz, tempo
 scaduto nel memory, parola intrusa colpita, parola non indovinata. Un livello
 perfetto (3 stelle) regala una vita in più, fino a un massimo di 5. Finite le vite
-compare "Vite esaurite" con il pulsante per continuare con 3 nuove vite, così nessuno
-resta bloccato e tutti vedono le schede di tutti i corsi.
+compare "Vite esaurite": è il game over del livello, che riparte da capo con
+3 nuove vite — i punti del tentativo non valgono e riprovarne costa −150 punti
+(il punteggio non va mai sotto zero). Così nessuno resta bloccato e nessuno
+raccoglie punti rifacendo lo stesso livello più volte.
 
 ## Grafica e dispositivi
 
@@ -104,10 +106,10 @@ resta bloccato e tutti vedono le schede di tutti i corsi.
   d'ambiente `SCORE_SECRET`; in locale viene creato `data/token-secret` (escluso
   dal repository), su Vercel serve sempre `SCORE_SECRET`.
 
-## Pannello admin: tempo per rispondere
+## Pannello admin: tempo di gioco e classifica
 
-Solo l'organizzatore può cambiare il tempo base dei minigiochi (da 5 a 120
-secondi, predefinito 20). Ogni minigioco lo usa così:
+Solo l'organizzatore cambia il tempo base dei minigiochi (da 5 a 120 secondi,
+predefinito 20) e gestisce la classifica del giorno. Ogni minigioco usa il tempo così:
 
 - **Quiz**: tempo per ogni domanda.
 - **Memory**: tempo base × numero di coppie (minimo 30 secondi).
@@ -117,6 +119,12 @@ secondi, predefinito 20). Ogni minigioco lo usa così:
 - **Come entrare**: nella pagina iniziale scrivete **`daddala`** come nome della squadra
   e premete *Inizia*: si apre il pannello admin già autenticato (vanno bene anche
   maiuscole, es. "Daddala"). In alternativa aprite `/admin.html` e scrivete la parola.
+- **Eliminare una squadra** (nome sbagliato o di prova): nella sezione *Classifica di
+  oggi* ogni riga mostra nome, punti e tempo con il tasto **Elimina** — due clic: il
+  primo lo cambia in *Sicuro?*, il secondo conferma. Il tasto **Azzera la classifica
+  di oggi** cancella tutto (ne resta una copia di sicurezza in `data/`).
+- L'ingranaggio admin nell'header è visibile **anche dai telefoni** (protetto dalla
+  parola segreta): durante l'evento potete correggere la classifica al volo.
 - Dal pannello si cambia il tempo con −5 / −1 / +1 / +5, si preme *Salva* e poi
   *Torna al gioco*.
 - La parola segreta è **fissa: `daddala`** e resta **solo sul server** (non compare
@@ -195,6 +203,9 @@ server.js              Server Express + API classifica e admin
 store.js               Salvataggio/lettura punteggi su data/scores.json
 settings.js            Tempo di risposta salvato su data/settings.json
 game-token.js          Token di partita firmati (HMAC) richiesti per inviare i punteggi
+scripts/
+  generate-qr.js       Genera il QR promozionale in promo/ (npm run qr)
+promo/                 QR per la presentazione (PNG 2048px + SVG, colore blu ITS)
 public/
   index.html           Schermata iniziale (nome squadra)
   game.html            Schermata di gioco (5 livelli)

@@ -62,13 +62,17 @@ Tutti i testi del gioco sono in italiano.
   punteggio massimo, soglia per superare il livello `PASS_STARS` = 2 stelle),
   condivise tra browser e server. Sotto soglia: schermata "Livello non superato" con
   Riprova (i punti del tentativo vengono annullati) o Salta (−`SKIP_PENALTY` = 150 punti,
-  mostra i corsi; il punteggio non va sotto 0).
+  mostra i corsi; il punteggio non va sotto 0). Vite esaurite durante il minigioco:
+  game over del LIVELLO (non della partita), che riparte da capo con 3 vite, punti del
+  tentativo annullati e −`LIVES_PENALTY` = 150 punti (stessa regola del non andare sotto 0).
 - Logo in `public/assets/`: `logo-its-olivetti.png` (originale), `logo-its-olivetti.svg`
   (vettoriale, nero per sfondi chiari) e `logo-its-olivetti-bianco.svg` (usato
   nell'intestazione scura di tutte le pagine). Contiene già la scritta del nome.
-- Pannello admin: ingranaggio in alto a destra in home e classifica (nascosto sotto
-  520px, così i telefoni dei visitatori non lo vedono), oppure parola segreta come nome
-  squadra, oppure `/admin.html`. Non c'è nella pagina di gioco per non uscire a metà.
+- Pannello admin: ingranaggio in alto a destra in home e classifica (visibile anche
+  dai telefoni: deciso con l'organizzatore, che così può eliminare una squadra
+  sbagliata durante l'evento; sotto 520px il bersaglio del tocco è più grande),
+  oppure parola segreta come nome squadra, oppure `/admin.html`. Non c'è nella
+  pagina di gioco per non uscire a metà.
 - `public/js/utils.js` – `escapeHtml`, `formatDuration`, `todayKey`, condivise tra
   pagine e server.
 - `public/js/courses.js` – livelli, minigiochi (quiz, memory, acchiappa, impiccato) e corsi
@@ -89,6 +93,12 @@ Tutti i testi del gioco sono in italiano.
   Layout per telefono, computer (≥900px) e proiettore (≥1400px); i testi crescono da
   soli, i breakpoint cambiano solo l'impaginazione. Animazioni solo con
   transform/opacity e spente con `prefers-reduced-motion`.
+- `scripts/generate-qr.js` – genera il QR promozionale in `promo/` con `npm run qr`
+  (dipendenza solo di sviluppo: `qrcode` in devDependencies, il gioco non la usa).
+  Punta all'indirizzo pubblico (`https://olivetti-quest.vercel.app`, primo argomento
+  per cambiarlo) con i colori del brand: blu ITS `#0153FF` su bianco, correzione
+  errori alta. Output: PNG 2048px + SVG. Da usare nella presentazione, NON nel sito
+  (il QR nella UI è stato rimosso su richiesta).
 
 ## Note per le modifiche
 - Le domande devono restare comprensibili a chiunque (niente conoscenze tecniche).
