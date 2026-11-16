@@ -23,6 +23,8 @@
   const PASS_STARS = 2;
   // Punti tolti a chi salta un livello dopo non averlo superato.
   const SKIP_PENALTY = 150;
+  // Punti tolti quando le vite finiscono: il livello riparte da capo.
+  const LIVES_PENALTY = 150;
 
   // Quanti elementi danno punti in un livello, in base al tipo di minigioco.
   function scoredItems(level) {
@@ -77,6 +79,7 @@
   return {
     PASS_STARS,
     SKIP_PENALTY,
+    LIVES_PENALTY,
     passPoints,
     speedBonus,
     BASE_POINTS,

@@ -33,7 +33,7 @@
   const totalLevels = ITS_LEVELS.length;
   const sfx = window.Sfx;
   const { escapeHtml, formatDuration } = window.Utils;
-  const { itemPoints, speedBonus, starsFor, scoredItems, PASS_STARS, SKIP_PENALTY, passPoints } =
+  const { itemPoints, speedBonus, starsFor, scoredItems, PASS_STARS, SKIP_PENALTY, LIVES_PENALTY, passPoints } =
     window.Scoring;
   const Icons = window.Icons;
   const SKIP_LABEL = `Salta ${Icons.svg("skipForward")}`;
@@ -100,7 +100,7 @@
   function hudInnerHtml() {
     const level = currentLevel();
     // Il pulsante SALTA compare solo mentre un minigioco è in corso (non sulla
-    // schermata "Vite esaurite": saltando da lì si ripartirebbe con 0 vite).
+    // schermata "Vite esaurite": da lì il livello riparte con il flusso di gioco).
     // Lo stato "armato" è in skipArmed, così sopravvive ai ridisegni dell'HUD.
     const skip =
       scope && scope.alive && !gameOverShown
@@ -188,30 +188,38 @@
     return state.lives;
   }
 
-  // Se le vite sono finite mostra "Vite esaurite" con il pulsante per continuare
-  // (così tutti arrivano a vedere i corsi), altrimenti prosegue subito con then().
+  // Se le vite sono finite è game over: il minigioco in corso si chiude e il
+  // LIVELLO (non tutta la partita) riparte da capo, con i punti del tentativo
+  // annullati e una penalità fissa. Altrimenti prosegue subito con then().
   function continueOrGameOver(then) {
     if (state.lives > 0) {
       then();
       return;
     }
     sfx.gameOver();
+    // Il minigioco è finito: chiudo lo scope, così timer e tastiera del vecchio
+    // gioco non possono più ridisegnare la schermata di game over.
+    closeScope();
     gameOverShown = true;
+    // I punti del tentativo non valgono (come dopo "Livello non superato") e
+    // riprovare costa la penalità: il punteggio non va sotto zero.
+    state.score = Math.max(0, state.levelStartScore - LIVES_PENALTY);
+
     app.innerHTML = `
       ${hudHtml()}
       <div class="game-over">
         <p class="game-over-icon">${Icons.heartCrack()}</p>
         <h2 class="title title--small">Vite esaurite!</h2>
-        <p class="center">La squadra ${escapeHtml(teamName)} ha finito le vite... ma la sfida continua.</p>
-        <button class="btn-arcade mt-16" id="continue-btn">Continua con ${MAX_LIVES} nuove vite</button>
+        <p class="center">La squadra ${escapeHtml(teamName)} ha finito le vite: il livello riparte da capo.</p>
+        <button class="btn-arcade mt-16" id="continue-btn">Riprova il livello (−${LIVES_PENALTY} punti)</button>
       </div>
     `;
     const continueBtn = document.getElementById("continue-btn");
     continueBtn.addEventListener("click", () => {
-      gameOverShown = false;
-      state.lives = MAX_LIVES;
       sfx.click();
-      then();
+      state.lives = MAX_LIVES;
+      gameOverShown = false;
+      startLevel();
     });
     focusButton(continueBtn);
   }

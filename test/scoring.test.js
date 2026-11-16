@@ -48,6 +48,11 @@ describe("scoring: costanti e punti per elemento", () => {
     assert.equal(MAX_POINTS_PER_ITEM, 200);
   });
 
+  test("penalità fisse: salto del livello non superato e vite esaurite (livello che riparte)", () => {
+    assert.equal(Scoring.SKIP_PENALTY, 150);
+    assert.equal(Scoring.LIVES_PENALTY, 150);
+  });
+
   test("bonus velocità e punti dell'elemento, con i valori estremi ristretti a 0..1", () => {
     assert.equal(Scoring.speedBonus(0), 0);
     assert.equal(Scoring.speedBonus(1), 100);
