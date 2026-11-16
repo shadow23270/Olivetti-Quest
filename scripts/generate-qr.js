@@ -1,4 +1,6 @@
-/* Genera il QR code promozionale del gioco, da inserire nella presentazione.
+/* Genera il QR code promozionale del gioco: da inserire nella presentazione
+ * e usato dalla pagina classifica finché nessuno ha giocato (public/assets/
+ * qr-gioca.svg: appena una squadra completa, la pagina lo toglie da sola).
  * Punta all'indirizzo pubblico del gioco e usa il blu del brand ITS (preso
  * dal logo in public/assets/logo-its-olivetti.svg): blu #0153FF su bianco,
  * con un margine bianco tutto intorno perché le fotocamera lo leggano bene.
@@ -40,10 +42,17 @@ const outDir = path.join(__dirname, "..", "promo");
   const svgPath = path.join(outDir, "qr-gioca-olivetti-quest.svg");
   await QRCode.toFile(svgPath, GAME_URL, options);
 
+  // Copia servita dal sito: la classifica vuota la mostra al posto della
+  // tabella, poi la toglie da sola quando arriva la prima squadra.
+  const sitePath = path.join(__dirname, "..", "public", "assets", "qr-gioca.svg");
+  await QRCode.toFile(sitePath, GAME_URL, options);
+
   console.log("QR code generato, punta a: " + GAME_URL);
   console.log("  PNG (da trascinare nella presentazione): " + pngPath);
   console.log("  SVG (vettoriale): " + svgPath);
+  console.log("  SVG nel sito (classifica vuota): " + sitePath);
 })().catch((err) => {
   console.error("Generazione QR fallita:", err);
   process.exit(1);
 });
+

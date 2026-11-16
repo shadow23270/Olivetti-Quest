@@ -89,7 +89,9 @@ raccoglie punti rifacendo lo stesso livello più volte.
   grande: se la pagina è aperta su "localhost", il server risponde con il suo
   indirizzo di rete (`/api/address`), quello che i telefoni possono davvero usare.
   La classifica e il podio si aggiornano da soli ogni 3,5 secondi, senza ricaricare
-  la pagina.
+  la pagina. Finché nessuno ha giocato, al posto del podio compare il QR verso il
+  gioco (public/assets/qr-gioca.svg, generato con `npm run qr`): appena la prima
+  squadra completa, il QR sparisce da solo e restano podio e URL.
 - **Niente scroll durante i minigiochi**: mentre un minigioco è in corso la pagina
   non scorre, così su telefono un tocco di troppo non sposta domanda o tastiera; se
   il contenuto non ci sta (font ingranditi dal sistema) a scorrere è solo la card.

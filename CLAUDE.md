@@ -30,7 +30,9 @@ Tutti i testi del gioco sono in italiano.
   (1° posto al centro; stili `.podium-*` in `style.css`), dal 4° si resta in tabella.
   Sotto c'è il blocco "Gioca ora" con l'indirizzo in grande: su localhost lo chiede
   a `/api/address` (indirizzo di rete del PC; su Vercel risponde null e resta il
-  dominio della barra degli indirizzi). Nessun QR code.
+  dominio della barra degli indirizzi). Finché nessuno ha giocato, al posto della
+  tabella c'è il QR del sito (public/assets/qr-gioca.svg): alla prima squadra entra
+  il ridisegno automatico lo toglie e mostrano podio e tabella.
 - Durante i minigiochi `game.js` mette la classe `is-playing` sul body (insieme al
   "scope" del livello): la pagina non scorre; a scorrere, se serve, è solo la card.
 
@@ -97,8 +99,9 @@ Tutti i testi del gioco sono in italiano.
   (dipendenza solo di sviluppo: `qrcode` in devDependencies, il gioco non la usa).
   Punta all'indirizzo pubblico (`https://olivetti-quest.vercel.app`, primo argomento
   per cambiarlo) con i colori del brand: blu ITS `#0153FF` su bianco, correzione
-  errori alta. Output: PNG 2048px + SVG. Da usare nella presentazione, NON nel sito
-  (il QR nella UI è stato rimosso su richiesta).
+  errori alta. Output: PNG 2048px + SVG in `promo/` e copia SVG in
+  `public/assets/qr-gioca.svg`, che la pagina classifica mostra SOLO finché
+  nessuno ha giocato (poi lo toglie da sola).
 
 ## Note per le modifiche
 - Le domande devono restare comprensibili a chiunque (niente conoscenze tecniche).

@@ -91,7 +91,18 @@
     const noticeHtml = notice ? `<p class="offline-notice">${notice}</p>` : "";
 
     if (entries.length === 0) {
-      return `${noticeHtml}<p class="empty-state">Nessuna squadra ha ancora giocato oggi.<br/>Siate i primi! ${Icons.svg("gamepad", "icon-inline-muted")}</p>`;
+      // Classifica ancora vuota: al posto della tabella c'è il QR verso il
+      // gioco (immagine in public/assets/qr-gioca.svg, generata con npm run qr).
+      // Appena una squadra entra, il ridisegno automatico lo sostituisce con
+      // podio e tabella.
+      return `${noticeHtml}
+        <div class="empty-state">
+          <div class="empty-qr">
+            <img src="assets/qr-gioca.svg" alt="QR code: scansiona e gioca subito" />
+          </div>
+          <p class="empty-title">Nessuna squadra ha ancora giocato oggi</p>
+          <p class="empty-hint">Scansiona il codice con la fotocamera del telefono: il tuo punteggio comparirà qui.</p>
+        </div>`;
     }
 
     const youIdx = youIndex(entries);

@@ -1352,10 +1352,41 @@ input[type="password"]:focus {
   margin: 0 0 14px;
 }
 
+/* Classifica ancora vuota: QR verso il gioco su pannello bianco (il codice è
+   blu ITS su bianco, gli stessi colori della presentazione). Appena una
+   squadra completa, il ridisegno automatico lo sostituisce con podio e tabella. */
 .empty-state {
   text-align: center;
   color: var(--color-on-background-muted);
   padding: 20px 0;
+}
+
+.empty-qr {
+  display: block;
+  width: min(210px, 56vw);
+  margin: 0 auto 14px;
+  padding: 10px;
+  background: oklch(100% 0 0 / 0.92);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+
+.empty-qr img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.empty-title {
+  margin: 0 0 6px;
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--color-on-primary);
+}
+
+.empty-hint {
+  margin: 0;
+  font-size: var(--text-sm);
 }
 
 /* ---------- Admin ---------- */
@@ -2349,6 +2380,20 @@ body.is-playing .cabinet {
 
   .play-url-hint {
     font-size: var(--text-sm);
+  }
+
+  /* Con la classifica ancora vuota il QR cresce per essere inquadrato
+     comodamente dai telefoni in sala. */
+  .empty-qr {
+    width: 260px;
+  }
+
+  .empty-title {
+    font-size: var(--text-xl);
+  }
+
+  .empty-hint {
+    font-size: var(--text-base);
   }
 
   .leaderboard-status {
